@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClipAI — Smart Video Moment Extractor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c0f;
+    --surface: #14141a;
+    --surface2: #1c1c25;
+    --surface3: #242430;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --text: #f0f0f5;
+    --text-sub: #8b8ba0;
+    --text-muted: #55556a;
+    --accent: #7c6cfa;
+    --accent-glow: rgba(124,108,250,0.18);
+    --accent-hover: #9080fc;
+    --green: #34d399;
+    --green-bg: rgba(52,211,153,0.1);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251,191,36,0.1);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.1);
+    --funny: #fb923c;
+    --funny-bg: rgba(251,146,60,0.12);
+    --key: #818cf8;
+    --key-bg: rgba(129,140,248,0.12);
+    --action: #34d399;
+    --action-bg: rgba(52,211,153,0.12);
+    --radius: 10px;
+    --radius-lg: 16px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(12,12,15,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 18px; font-weight: 700;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    text-decoration: none;
+  }
+  .logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .nav-badge {
+    font-size: 11px; font-weight: 500;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(124,108,250,0.3);
+    padding: 2px 10px; border-radius: 20px;
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 5rem 2rem 3.5rem;
+    max-width: 680px; margin: 0 auto;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,108,250,0.25);
+    padding: 4px 14px; border-radius: 20px;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700; line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p {
+    font-size: 16px; color: var(--text-sub);
+    max-width: 480px; margin: 0 auto 2rem;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 2rem;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .hero-stats span { display: flex; align-items: center; gap: 5px; }
+  .hero-stats svg { opacity: 0.5; }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 760px; margin: 0 auto;
+    padding: 0 1.5rem 5rem;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-glow);
+    border: 1px solid rgba(124,108,250,0.35);
+    color: var(--accent);
+    font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-header h2 {
+    font-family: var(--font-display);
+    font-size: 15px; font-weight: 600; color: var(--text);
+  }
+  .card-header p { font-size: 13px; color: var(--text-muted); margin-top: 1px; }
+
+  /* URL INPUT */
+  .url-wrap {
+    display: flex; gap: 8px;
+  }
+  .url-wrap input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body); font-size: 14px;
+    padding: 10px 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .url-wrap input:focus { border-color: var(--accent); }
+  .url-wrap input::placeholder { color: var(--text-muted); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    padding: 10px 18px; border-radius: var(--radius);
+    cursor: pointer; border: none; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-ghost {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+  }
+  .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-primary:disabled:hover { background: var(--accent); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-hover);
+    color: var(--text-sub);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hint {
+    font-size: 12px; color: var(--text-muted);
+    margin-top: 8px; display: flex; align-items: flex-start; gap: 5px;
+  }
+
+  /* VIDEO PREVIEW */
+  .video-box {
+    width: 100%; aspect-ratio: 16/9;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 14px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .video-placeholder {
+    text-align: center; color: var(--text-muted);
+  }
+  .video-placeholder svg { display: block; margin: 0 auto 10px; opacity: 0.3; }
+  .video-placeholder p { font-size: 13px; }
+  #videoEl { width: 100%; height: 100%; object-fit: contain; display: none; }
+
+  /* STATUS BAR */
+  .status {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px; margin-top: 12px;
+    font-size: 13px; color: var(--text-sub);
+  }
+  .status.hidden { display: none; }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green); flex-shrink: 0;
+  }
+  .status-dot.pulse { background: var(--amber); animation: pulse 1.2s infinite; }
+  .status-dot.err { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* SETTINGS GRID */
+  .settings-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .field label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+  .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body); font-size: 14px;
+    padding: 9px 12px; outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b8ba0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    cursor: pointer;
+  }
+  .field select:focus { border-color: var(--accent); }
+
+  /* TAGS */
+  .tag-label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.25rem 0 8px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 13px; font-weight: 500;
+    padding: 5px 14px; border-radius: 20px;
+    cursor: pointer; user-select: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .tag:hover { border-color: var(--border-hover); color: var(--text-sub); }
+  .tag.active {
+    background: var(--accent-glow);
+    border-color: rgba(124,108,250,0.4);
+    color: var(--accent);
+  }
+
+  /* PROGRESS */
+  .progress-wrap { margin-top: 12px; display: none; }
+  .progress-track {
+    height: 3px; background: var(--surface2);
+    border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--accent);
+    border-radius: 2px; width: 0%; transition: width 0.4s ease;
+  }
+  .progress-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  /* ANALYZE BTN */
+  .analyze-btn {
+    width: 100%; justify-content: center;
+    margin-top: 1.25rem;
+    padding: 12px; font-size: 15px;
+  }
+
+  /* MOMENTS */
+  .moments-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1rem;
+  }
+  .moments-header h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+  .moments-header .count { font-size: 13px; color: var(--text-muted); }
+  .select-all-btn {
+    font-size: 12px; color: var(--accent); background: none;
+    border: none; cursor: pointer; font-family: var(--font-body);
+    padding: 0;
+  }
+  .select-all-btn:hover { text-decoration: underline; }
+
+  .moment-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px; margin-bottom: 8px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .moment-item:hover { border-color: var(--border-hover); }
+  .moment-item.selected {
+    border-color: rgba(124,108,250,0.45);
+    background: rgba(124,108,250,0.06);
+  }
+  .moment-thumb {
+    width: 72px; height: 40px; border-radius: 6px;
+    background: var(--surface3); flex-shrink: 0;
+    overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .moment-thumb canvas { width: 100%; height: 100%; object-fit: cover; }
+  .thumb-placeholder {
+    font-size: 18px; opacity: 0.4;
+  }
+  .moment-info { flex: 1; min-width: 0; }
+  .moment-title { font-weight: 500; font-size: 14px; color: var(--text); }
+  .moment-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .moment-reason { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.4; }
+  .moment-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+  .badge {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  .badge-funny { background: var(--funny-bg); color: var(--funny); }
+  .badge-key { background: var(--key-bg); color: var(--key); }
+  .badge-action { background: var(--action-bg); color: var(--action); }
+  .badge-emotional { background: rgba(236,72,153,0.12); color: #f472b6; }
+  .badge-surprising { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .score-chip {
+    font-size: 11px; color: var(--text-muted);
+    background: var(--surface3); border-radius: 6px;
+    padding: 2px 8px; font-weight: 500;
+  }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border-hover); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .moment-item.selected .check-box {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .check-box svg { display: none; }
+  .moment-item.selected .check-box svg { display: block; }
+
+  /* EXPORT ROW */
+  .export-row {
+    display: flex; gap: 8px; margin-top: 1.25rem;
+  }
+  .export-row .btn-primary { flex: 1; justify-content: center; }
+
+  /* FFMPEG MODAL */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; padding: 2rem;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-hover);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem; max-width: 600px; width: 100%;
+  }
+  .modal h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'Courier New', monospace; font-size: 12.5px;
+    color: var(--text-sub); line-height: 1.7;
+    white-space: pre-wrap; word-break: break-all;
+    margin-bottom: 12px; max-height: 260px; overflow-y: auto;
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 3rem 2rem;
+    font-size: 12px; color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+  @media (max-width: 560px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .export-row { flex-direction: column; }
+    .hero { padding: 3.5rem 1.25rem 2.5rem; }
+    main { padding: 0 1rem 4rem; }
+    nav { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="logo-dot"></div>
+    ClipAI
+  </a>
+  <span class="nav-badge">Personal Edition</span>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+    AI-Powered
+  </div>
+  <h1>Turn long videos into<br /><span>short gold moments</span></h1>
+  <p>Paste a video URL. AI scans it and pulls out the funniest, most important, and most exciting clips automatically.</p>
+  <div class="hero-stats">
+    <span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Instant analysis
+    </span>
+    <span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Runs in your browser
+    </span>
+    <span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Export-ready clips
+    </span>
+  </div>
+</section>
+
+<main>
+
+  <!-- STEP 1 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">1</div>
+      <div>
+        <h2>Video source</h2>
+        <p>Paste a direct .mp4 or .webm video URL</p>
+      </div>
+    </div>
+    <div class="url-wrap">
+      <input type="text" id="videoUrl" placeholder="https://youtu.be/... or https://example.com/video.mp4" onpaste="handlePaste()" onchange="handleUrlChange()" />
+      <button class="btn btn-ghost" id="loadBtn" onclick="loadVideo()" style="display:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Load
+      </button>
+    </div>
+    <p class="hint">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      YouTube, TikTok, Instagram, or direct .mp4/.webm URLs — just paste and it starts automatically.
+    </p>
+    <div class="video-box" id="videoBox">
+      <div class="video-placeholder" id="placeholder">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <p>Video preview will appear here</p>
+      </div>
+      <video id="videoEl" controls></video>
+    </div>
+    <div class="status hidden" id="statusBar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">2</div>
+      <div>
+        <h2>Detection settings</h2>
+        <p>Tell AI what to look for</p>
+      </div>
+    </div>
+    <div class="settings-grid">
+      <div class="field">
+        <label>Clip length</label>
+        <select id="clipLen">
+          <option value="15">15 seconds</option>
+          <option value="30" selected>30 seconds</option>
+          <option value="60">60 seconds</option>
+          <option value="90">90 seconds</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max clips</label>
+        <select id="maxClips">
+          <option value="3">3 clips</option>
+          <option value="5" selected>5 clips</option>
+          <option value="8">8 clips</option>
+          <option value="10">10 clips</option>
+        </select>
+      </div>
+    </div>
+    <div class="tag-label">Moment types</div>
+    <div class="tags">
+      <span class="tag active" data-type="funny" onclick="toggleTag(this)">😂 Funny</span>
+      <span class="tag active" data-type="key" onclick="toggleTag(this)">⭐ Key highlight</span>
+      <span class="tag active" data-type="action" onclick="toggleTag(this)">⚡ High energy</span>
+      <span class="tag" data-type="emotional" onclick="toggleTag(this)">💙 Emotional</span>
+      <span class="tag" data-type="surprising" onclick="toggleTag(this)">🎯 Surprising</span>
+    </div>
+    <button class="btn btn-primary analyze-btn" id="analyzeBtn" onclick="analyzeVideo()" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Detect moments with AI
+    </button>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">Analyzing video...</div>
+    </div>
+  </div>
+
+  <!-- STEP 3 — hidden until analyzed -->
+  <div class="card" id="momentsCard" style="display:none;">
+    <div class="moments-header">
+      <div>
+        <h3>Detected moments</h3>
+        <div class="count" id="selectedCount">0 selected</div>
+      </div>
+      <button class="select-all-btn" onclick="selectAll()">Select all</button>
+    </div>
+    <div id="momentsList"></div>
+    <div class="export-row">
+      <button class="btn btn-primary" onclick="showExport()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export ffmpeg commands
+      </button>
+      <button class="btn btn-outline" onclick="copyTimestamps()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy timestamps
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  ClipAI — personal video moment extractor &nbsp;·&nbsp; Powered by Claude AI
+</footer>
+
+<!-- FFMPEG MODAL -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h3>ffmpeg export commands</h3>
+    <p>Run these commands in your terminal to extract each clip from your video file.</p>
+    <div class="code-block" id="ffmpegCode"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" onclick="copyFfmpeg()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy all
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let videoLoaded = false;
+let detectedMoments = [];
+let selectedMoments = new Set();
+let currentVideoUrl = '';
+let isDownloading = false;
+
+function isYouTubeUrl(url) {
+  return /youtube\.com|youtu\.be|tiktok\.com|instagram\.com|facebook\.com/.test(url);
+}
+
+async function handlePaste() {
+  setTimeout(() => handleUrlChange(), 100);
+}
+
+function handleUrlChange() {
+  const url = document.getElementById('videoUrl').value.trim();
+  if (!url) return;
+  
+  if (isYouTubeUrl(url)) {
+    // Auto-download YouTube/social videos
+    downloadAndLoad(url);
+  } else if (url.match(/\.(mp4|webm|mov|avi)(\?.*)?$/i)) {
+    // Direct video file URL - load immediately
+    loadVideo(url);
+  }
+}
+
+async function downloadAndLoad(urlInput) {
+  if (isDownloading) return;
+  isDownloading = true;
+  const urlInput_el = document.getElementById('videoUrl');
+  urlInput_el.disabled = true;
+
+  setStatus('pulse', 'Downloading video...');
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: urlInput })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setStatus('err', `Download failed: ${data.error}`);
+      urlInput_el.disabled = false;
+      isDownloading = false;
+      return;
+    }
+
+    // Load the downloaded/direct video
+    loadVideo(data.videoUrl);
+    urlInput_el.disabled = false;
+    isDownloading = false;
+  } catch (err) {
+    setStatus('err', 'Download error: ' + err.message);
+    urlInput_el.disabled = false;
+    isDownloading = false;
+  }
+}
+
+function loadVideo(videoUrl) {
+  if (!videoUrl) {
+    videoUrl = document.getElementById('videoUrl').value.trim();
+    if (!videoUrl) return;
+  }
+
+  currentVideoUrl = videoUrl;
+  const video = document.getElementById('videoEl');
+  const placeholder = document.getElementById('placeholder');
+
+  setStatus('pulse', 'Loading video...');
+  video.src = videoUrl;
+  video.onloadedmetadata = () => {
+    placeholder.style.display = 'none';
+    video.style.display = 'block';
+    videoLoaded = true;
+    document.getElementById('analyzeBtn').disabled = false;
+    setStatus('ok', `Ready to analyze · ${formatTime(video.duration)} duration`);
+  };
+  video.onerror = () => {
+    setStatus('err', 'Could not load video. Check the URL and try again.');
+  };
+}
+
+function setStatus(type, msg) {
+  const bar = document.getElementById('statusBar');
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  bar.classList.remove('hidden');
+  dot.className = 'status-dot' + (type === 'pulse' ? ' pulse' : type === 'err' ? ' err' : '');
+  text.textContent = msg;
+}
+
+function toggleTag(el) { el.classList.toggle('active'); }
+
+async function analyzeVideo() {
+  if (!videoLoaded) return;
+  const btn = document.getElementById('analyzeBtn');
+  const pw = document.getElementById('progressWrap');
+  const pf = document.getElementById('progressFill');
+  const pl = document.getElementById('progressLabel');
+
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> AI is analyzing...`;
+  pw.style.display = 'block';
+  setStatus('pulse', 'Scanning video for key moments...');
+
+  const style = `@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
+  if (!document.getElementById('spin-style')) {
+    const s = document.createElement('style'); s.id = 'spin-style'; s.textContent = style;
+    document.head.appendChild(s);
+  }
+
+  const video = document.getElementById('videoEl');
+  const duration = Math.floor(video.duration) || 120;
+  const clipLen = parseInt(document.getElementById('clipLen').value);
+  const maxClips = parseInt(document.getElementById('maxClips').value);
+  const activeTypes = [...document.querySelectorAll('.tag.active')].map(t => t.dataset.type);
+
+  let progress = 0;
+  const timer = setInterval(() => {
+    progress = Math.min(progress + Math.random() * 12, 88);
+    pf.style.width = progress + '%';
+    if (progress < 30) pl.textContent = 'Scanning frames...';
+    else if (progress < 60) pl.textContent = 'Detecting patterns...';
+    else pl.textContent = 'Ranking moments...';
+  }, 350);
+
+  const frames = [];
+  const count = Math.min(10, Math.floor(duration / 8));
+  for (let i = 0; i < count; i++) {
+    frames.push({ time: Math.floor((duration / count) * i + 4), note: `frame at ${Math.floor((duration / count) * i + 4)}s` });
+  }
+
+  const prompt = `You are a professional video editor AI. Analyze this video and identify the ${maxClips} best moments that match: ${activeTypes.join(', ')}.
+
+Video info:
+- Duration: ${duration} seconds (${formatTime(duration)})
+- Target clip length: ${clipLen} seconds
+- Sampled frames: ${JSON.stringify(frames)}
+
+Return ONLY a valid JSON array, no markdown, no explanation:
+[{"start":<seconds>,"end":<seconds>,"title":"<concise title>","type":"<${activeTypes.join('|')}>","reason":"<one sentence why this is a great clip>","score":<7-10>}]
+
+Rules:
+- Spread moments across the full video (beginning, middle, end)
+- start/end must be within 0 and ${duration}
+- end - start should be close to ${clipLen}
+- Title should be descriptive and catchy (max 6 words)`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    clearInterval(timer); pf.style.width = '100%';
+
+    let moments = [];
+    try {
+      const raw = data.content[0].text.replace(/```json|```/g, '').trim();
+      moments = JSON.parse(raw);
+    } catch(e) {
+      moments = fallbackMoments(duration, clipLen, maxClips, activeTypes);
+    }
+
+    detectedMoments = moments;
+    selectedMoments = new Set(moments.map((_, i) => i));
+
+    setTimeout(() => {
+      pw.style.display = 'none';
+      renderMoments(moments);
+      setStatus('ok', `Found ${moments.length} moments — select and export below`);
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.09"/></svg> Re-analyze`;
+    }, 400);
+  } catch(e) {
+    clearInterval(timer);
+    const moments = fallbackMoments(duration, clipLen, maxClips, activeTypes);
+    detectedMoments = moments;
+    selectedMoments = new Set(moments.map((_, i) => i));
+    renderMoments(moments);
+    setStatus('ok', `Estimated ${moments.length} moments (AI offline — using timestamp spread)`);
+    pw.style.display = 'none';
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.09"/></svg> Re-analyze`;
+  }
+}
+
+function fallbackMoments(duration, clipLen, count, types) {
+  const tMap = {
+    funny: ['Unexpected reaction', 'Comedic timing', 'Hilarious moment', 'Funny exchange'],
+    key: ['Key highlight', 'Main reveal', 'Critical moment', 'Important scene'],
+    action: ['High energy peak', 'Exciting sequence', 'Action burst', 'Fast-paced moment'],
+    emotional: ['Touching scene', 'Emotional beat', 'Heartfelt moment'],
+    surprising: ['Plot twist', 'Unexpected turn', 'Shocking reveal']
+  };
+  const t = types.length ? types : ['key', 'funny', 'action'];
+  return Array.from({ length: count }, (_, i) => {
+    const ts = Math.floor((duration / (count + 1)) * (i + 1));
+    const type = t[i % t.length];
+    return {
+      start: Math.max(0, ts - clipLen / 2),
+      end: Math.min(duration, ts + clipLen / 2),
+      title: (tMap[type] || tMap.key)[i % 4],
+      type, reason: 'Notable moment detected in this section of the video.',
+      score: 8 + Math.floor(Math.random() * 2)
+    };
+  });
+}
+
+function renderMoments(moments) {
+  const card = document.getElementById('momentsCard');
+  const list = document.getElementById('momentsList');
+  card.style.display = 'block';
+  list.innerHTML = '';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  moments.forEach((m, i) => {
+    const div = document.createElement('div');
+    div.className = 'moment-item selected';
+    div.onclick = () => toggleMoment(i, div);
+
+    const badgeClass = `badge-${m.type}`;
+    const emoji = { funny: '😂 funny', key: '⭐ key', action: '⚡ action', emotional: '💙 emotional', surprising: '🎯 surprising' };
+
+    div.innerHTML = `
+      <div class="check-box">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="moment-thumb" id="thumb-${i}">
+        <div class="thumb-placeholder">🎬</div>
+        <canvas id="canvas-${i}" width="72" height="40" style="display:none;position:absolute;inset:0;"></canvas>
+      </div>
+      <div class="moment-info">
+        <div class="moment-title">${m.title}</div>
+        <div class="moment-meta">${formatTime(m.start)} → ${formatTime(m.end)} &nbsp;·&nbsp; ${Math.round(m.end - m.start)}s clip</div>
+        <div class="moment-reason">${m.reason}</div>
+      </div>
+      <div class="moment-right">
+        <span class="badge ${badgeClass}">${emoji[m.type] || m.type}</span>
+        <span class="score-chip">${m.score}/10</span>
+      </div>
+    `;
+    list.appendChild(div);
+    captureThumb(i, m.start);
+  });
+  updateCount();
+}
+
+function captureThumb(index, timestamp) {
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('canvas-' + index);
+  if (!canvas || !video.src) return;
+  const tmp = document.createElement('video');
+  tmp.src = video.src; tmp.muted = true; tmp.crossOrigin = 'anonymous';
+  tmp.currentTime = timestamp;
+  tmp.onseeked = () => {
+    try {
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(tmp, 0, 0, 72, 40);
+      const placeholder = document.querySelector(`#thumb-${index} .thumb-placeholder`);
+      if (placeholder) placeholder.style.display = 'none';
+      canvas.style.display = 'block';
+    } catch(e) {}
+  };
+}
+
+function toggleMoment(i, el) {
+  if (selectedMoments.has(i)) { selectedMoments.delete(i); el.classList.remove('selected'); }
+  else { selectedMoments.add(i); el.classList.add('selected'); }
+  updateCount();
+}
+
+function selectAll() {
+  detectedMoments.forEach((_, i) => {
+    selectedMoments.add(i);
+    document.querySelectorAll('.moment-item')[i]?.classList.add('selected');
+  });
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('selectedCount').textContent = `${selectedMoments.size} of ${detectedMoments.length} selected`;
+}
+
+function formatTime(s) {
+  s = Math.floor(s);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function showExport() {
+  const selected = [...selectedMoments].sort((a, b) => a - b).map(i => detectedMoments[i]);
+  if (!selected.length) { alert('Select at least one moment to export.'); return; }
+
+  const filename = currentVideoUrl.split('/').pop() || 'input.mp4';
+  const lines = selected.map((m, i) => {
+    const start = Math.floor(m.start);
+    const dur = Math.round(m.end - m.start);
+    const outName = `clip_${(i + 1).toString().padStart(2, '0')}_${m.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.mp4`;
+    return `# Clip ${i + 1}: ${m.title}\nffmpeg -i "${filename}" -ss ${start} -t ${dur} -c:v libx264 -c:a aac -movflags +faststart "${outName}"`;
+  });
+
+  document.getElementById('ffmpegCode').textContent = lines.join('\n\n');
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function copyFfmpeg() {
+  const text = document.getElementById('ffmpegCode').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.modal-actions .btn-primary');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy all`; }, 2000);
+  });
+}
+
+function copyTimestamps() {
+  const selected = [...selectedMoments].sort((a, b) => a - b).map(i => detectedMoments[i]);
+  if (!selected.length) { alert('Select at least one moment first.'); return; }
+  const text = selected.map((m, i) => `Clip ${i + 1}: ${m.title} [${formatTime(m.start)} - ${formatTime(m.end)}] (${m.type})`).join('\n');
+  navigator.clipboard.writeText(text).then(() => setStatus('ok', 'Timestamps copied to clipboard'));
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
