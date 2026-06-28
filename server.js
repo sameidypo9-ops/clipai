@@ -10,10 +10,17 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(__dirname));
+
+// Serve static files from current directory
+app.use(express.static(process.cwd()));
+
+// Root route for debugging
+app.get('/', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'video-editor.html'));
+});
 
 // Create temp directory for downloads
-const tempDir = path.join(__dirname, 'temp');
+const tempDir = path.join(process.cwd(), 'temp');
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
@@ -97,6 +104,12 @@ app.get('/health', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`ClipAI server running on port ${PORT}`);
-  console.log(`Visit http://localhost:${PORT}`);
+  console.log(`✅ ClipAI server running on port ${PORT}`);
+  console.log(`📁 Temp directory: ${tempDir}`);
+  console.log(`🎬 Ready to accept video downloads`);
+});
+
+// Handle errors
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught error:', err);
 });
