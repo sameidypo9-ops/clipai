@@ -1,0 +1,16 @@
+[build]
+cmd = "npm install"
+
+[start]
+cmd = "node server.js"
+
+[[providers]]
+name = "python"
+
+[[providers]]
+name = "pip"
+dependenciesFile = "requirements.txt"
+
+[[providers]]
+name = "nodejs"
+nodeVersion = "18"

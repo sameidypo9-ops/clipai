@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: clipai
+    env: node
+    plan: free
+    nixpacks:
+      providers:
+        - python
+        - nodejs
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
